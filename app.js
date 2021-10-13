@@ -1,44 +1,68 @@
-import Page from "./js/Page.js";
+import Contact from "./pages/contact";
+import AboutMe from "./pages/about_me";
 
-class Menu {
-  $button1 = document.querySelector('.button1'); // 메뉴 버튼1
-  $button2 = document.querySelector('.button2'); // 메뉴 버튼2
-  menu; // 현재 메뉴가 어떤 메뉴인지
+class App {
+  $menu = document.querySelector('.menu-container');
+  $app = document.querySelector('.app');
+
+  currentMenu; // 현재 메뉴가 어떤 메뉴인지
 
   constructor() {
     this.menuClick();
   }
 
   menuClick() { // 메뉴 클릭 메서드
-    this.$button1.addEventListener('click', () => {
+    this.$menu.addEventListener('click', (e) => {
+      let element = e.target;
+      while (!element.classList.contains('menu')) {
+        element = element.parentNode;
+        if (element.nodeName === 'BODY') {
+          element = null;
+          return;
+        }
+      }
 
-      if (this.menu === '/about-me') return; // 이미 해당 메뉴 상태라면 반환
+      if (element.classList.contains('button1')) {
+        this.pushMenu({ menu: '/about-me', component: AboutMe });
+      }
 
-      this.menu = '/about-me' // 현재 메뉴 할당
+      if (element.classList.contains('button2')) {
+        this.pushMenu({ menu: '/contact', component: Contact })
+      }
 
-      window.history.pushState({ path: '/about-me' }, '', '/about-me'); // history.pushState 로 url 주소변경
-
-      const page = new Page(); // 페이지 인스턴스 생성
-      page.render(); // 페이지 렌더링
     })
+  }
 
-    this.$button2.addEventListener('click', () => {
+  pushMenu({ menu, component }) {
+    if (this.currentMenu === menu) return; // 이미 해당 메뉴 상태라면 반환
+    this.$app.replaceChildren();
 
-      if (this.menu === '/contact') return; // 이미 해당 메뉴 상태라면 반환
+    this.currentMenu = menu // 현재 메뉴 할당
+    window.history.pushState({ path: menu }, '', menu); // history.pushState 로 url 주소변경
+    this.createPage({ component })
+  }
 
-      this.menu = '/contact' // 현재 메뉴 할당
-
-      window.history.pushState({ path: '/contact' }, '', '/contact'); // history.pushState 로 url 주소변경
-
-      const page = new Page(); // 페이지 인스턴스 생성
-      page.render(); // 페이지 렌더링
-    })
+  createPage({ component }) {
+    const page = new component(); // 페이지 인스턴스 생성
+    page.attechElements(this.$app); // 페이지 렌더링
   }
 }
 
+const app = new App();
+
 window.onpopstate = function (event) { // 사용자가 브라우저 이동 시 발생되는 이벤트
-  const page = new Page();
-  page.render(); // 브라우저 이동할 때마다 렌더링
+  const { path } = window.history.state
+
+  switch (path) {
+    case '/contact':
+      app.$app.replaceChildren();
+      app.createPage({ component: Contact });
+      break;
+    case '/about-me':
+      app.$app.replaceChildren();
+      app.createPage({ component: AboutMe });
+      break;
+  }
+
 };
 
-new Menu();
